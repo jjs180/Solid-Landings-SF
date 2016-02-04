@@ -1,0 +1,5 @@
+trigger updateRelatedRecords on Lead (after update) {
+    if(trigger.isAfter && trigger.isUpdate){
+        updateRelatedRecordsHelper.updateRecords(trigger.new,trigger.oldMap);
+    }
+}

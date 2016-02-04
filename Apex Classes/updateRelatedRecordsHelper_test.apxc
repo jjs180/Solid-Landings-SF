@@ -1,0 +1,44 @@
+@isTest
+private Class updateRelatedRecordsHelper_test{
+
+    static testMethod void Test_LeadConvert(){
+        Lead testLead = new Lead(firstName ='Test Name',lastName = 'Test Last',company ='test Company',phone='123456789',Status='Waiting',LeadSource='Alumni',Primary_Insurance__c = 'No');
+        insert testLead;
+        system.assertNotEquals(testLead.Id,null);
+        
+        list<RecordType>lstRecType = [SELECT Id,DeveloperName,SobjectType FROM RecordType where SobjectType ='Account' AND DeveloperName ='Vendor'];
+        system.assertNotEquals(lstRecType.size(),0);
+        
+        Account acc = new account(name='test',recordTypeId=lstRecType[0].id);
+        insert acc;
+        system.assertNotEquals(acc.Id,null);
+        
+        Referral_Out__c referral = new Referral_Out__c(Inquiry__c=testLead.Id,Referral_Out__c = acc.Id);
+        insert referral;
+        system.assertNotEquals(referral.Id,null);
+        
+        Insurance_Verification__c insuranceRec = new Insurance_Verification__c(Inquiry__c=testLead.Id);
+        insert insuranceRec;
+        system.assertNotEquals(insuranceRec.Id,null);
+        
+        Substance__c substanceRec = new Substance__c(Inquiry__c=testLead.Id);
+        insert substanceRec;
+        system.assertNotEquals(substanceRec.Id,null);
+        
+        test.StartTest();
+        Database.LeadConvert lc = new database.LeadConvert();
+        lc.setLeadId(testLead.id);
+
+        LeadStatus convertStatus = [Select Id, MasterLabel from LeadStatus where IsConverted=true limit 1];
+        lc.setConvertedStatus(convertStatus.MasterLabel);
+
+        Database.LeadConvertResult lcr = Database.convertLead(lc);
+        System.assert(lcr.isSuccess());
+        
+        System.assertEquals(referral.admit__c,testLead.ConvertedOpportunityId);
+        System.assertEquals(insuranceRec.admit__c,testLead.ConvertedOpportunityId);
+        System.assertEquals(substanceRec.admit__c,testLead.ConvertedOpportunityId);
+
+        test.StopTest();
+    }
+}

@@ -1,0 +1,50 @@
+public class updateRelatedRecordsHelper{
+    public class updateRelatedRecordsException extends Exception {}
+    public static void updateRecords(list<lead>listLead,map<Id,lead>mapOldLead){
+        map<Id,Id>mapLeadOpportunityId = new map<Id,Id>();
+        for(lead leadRec : listLead){
+            if(mapOldLead != null && leadRec.isConverted == true && leadRec.isConverted != mapOldLead.get(leadRec.Id).isConverted && leadRec.ConvertedOpportunityId != null){
+                mapLeadOpportunityId.put(leadRec.Id,leadRec.ConvertedOpportunityId);
+            }
+        }
+        list<Referral_Out__c>lstReferralUpdate = new list<Referral_Out__c>();
+        list<Insurance_Verification__c>lstInsuranceUpdate = new list<Insurance_Verification__c>();
+        list<Substance__c>lstSubstanceUpdate = new list<Substance__c>();
+        if(!mapLeadOpportunityId.isEmpty()){
+            list<Referral_Out__c>lstReferral = [Select id,Inquiry__c,Admit__c from Referral_Out__c where Inquiry__c IN : mapLeadOpportunityId.keySet()];
+            if(!lstReferral.isEmpty()){
+                for(Referral_Out__c referral : lstReferral){
+                    referral.Admit__c = mapLeadOpportunityId.get(referral.Inquiry__c);
+                    lstReferralUpdate.add(referral);
+                }
+            }
+            list<Insurance_Verification__c>lstInsurance = [Select id,Inquiry__c,Admit__c from Insurance_Verification__c where Inquiry__c IN : mapLeadOpportunityId.keySet()];
+            if(!lstInsurance.isEmpty()){
+                for(Insurance_Verification__c insuranceRec : lstInsurance){
+                    insuranceRec.Admit__c = mapLeadOpportunityId.get(insuranceRec.Inquiry__c);
+                    lstInsuranceUpdate.add(insuranceRec);
+                }
+            }
+            list<Substance__c>lstSubstance = [Select id,Inquiry__c,Admit__c from Substance__c where Inquiry__c IN : mapLeadOpportunityId.keySet()];
+            if(!lstSubstance.isEmpty()){
+                for(Substance__c substanceRec : lstSubstance){
+                    substanceRec.Admit__c = mapLeadOpportunityId.get(substanceRec.Inquiry__c);
+                    lstSubstanceUpdate.add(substanceRec);
+                }
+            }
+        }
+        if((!lstReferralUpdate.isEmpty() || !lstInsuranceUpdate.isEmpty() || !lstSubstanceUpdate.isEmpty())){
+            try{
+                if(!lstReferralUpdate.isEmpty())
+                    update lstReferralUpdate;
+                if(!lstInsuranceUpdate.isEmpty())
+                    update lstInsuranceUpdate;
+                if(!lstSubstanceUpdate.isEmpty())
+                    update lstSubstanceUpdate;
+            }
+            catch(exception e){
+                throw new updateRelatedRecordsException(e.getMessage());
+            }
+        }
+    }
+}
